@@ -78,6 +78,115 @@ export namespace util {
     }
 }
 
+export namespace Rest {
+    export async function get<T>(baseUrl: string, path: string, params?: { [key: string]: string })
+        : Promise<OResult<T>> {
+        if (!baseUrl) return new OResult(false, 'URL is required');
+        let url = util.appendPathToUrl(baseUrl, path);
+        for (const key in params) {
+            if (params.hasOwnProperty(key)) {
+                url.searchParams.append(key, params[key]!);
+            }
+        }
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                signal: AbortSignal.timeout(3000),
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return new OResult(true, undefined, result as any);
+            } else {
+                console.error('Failed:', response.status, response.statusText);
+                return new OResult(false, `Error: ${response.status} ${response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            return new OResult(false, `Error: ${error}`);
+        }
+    }
+    export function post<T>(baseUrl: string, path: string, bodyObj: any): Promise<OResult<T>> {
+        return _post<T>(baseUrl, path, bodyObj, 3000);
+    }
+    export function postLong<T>(baseUrl: string, path: string, bodyObj: any): Promise<OResult<T>> {
+        return _post<T>(baseUrl, path, bodyObj, 1000 * 60 * 5);
+    }
+    export async function _post<T>(baseUrl: string, path: string, bodyObj: any, timeoutMs?: number): Promise<OResult<T>> {
+        if (!baseUrl) return new OResult(false, 'URL is required');
+        let url = util.appendPathToUrl(baseUrl, path);
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyObj)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return new OResult(true, undefined, result as any);
+            } else {
+                console.error('Failed:', response.status, response.statusText);
+                return new OResult(false, `Error: ${response.status} ${response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            return new OResult(false, `Error: ${error}`);
+        }
+    }
+}
+export class OResult<T> {
+    success: boolean;
+    error?: string;
+    response?: T;
+    public constructor(success: boolean, error?: string, response?: T) {
+        this.success = success;
+        this.error = error;
+        this.response = response;
+    }
+}
+
+export class Deferred<T> implements Promise<T> {
+
+    private _resolveSelf!: ((value: T | PromiseLike<T>) => void);
+    private _rejectSelf!: ((value: T | PromiseLike<T>) => void);
+    private promise: Promise<T>
+
+    constructor() {
+        this.promise = new Promise((resolve, reject) => {
+            this._resolveSelf = resolve
+            this._rejectSelf = reject
+        });
+    }
+    get [Symbol.toStringTag](): string { return "Deferred"; }
+
+    public then<TResult1 = T, TResult2 = never>(
+        onfulfilled?: ((value: T) =>
+            TResult1 | PromiseLike<TResult1>) | undefined | null,
+        onrejected?: ((reason: any) =>
+            TResult2 | PromiseLike<TResult2>) | undefined | null
+    ): Promise<TResult1 | TResult2> {
+        return this.promise.then(onfulfilled, onrejected);
+    }
+
+    public catch<TResult = never>(
+        onrejected?: ((reason: any) =>
+            TResult | PromiseLike<TResult>) | undefined | null
+    ): Promise<T | TResult> {
+        return this.promise.catch(onrejected);
+    }
+
+    public async finally(onfinally?: () => void): Promise<T> {
+        return this.promise.finally(onfinally);
+    }
+
+
+    public resolve(val?: T) { this._resolveSelf(val as any); }
+    public reject(reason?: any) { this._rejectSelf(reason); }
+
+}
+
 
 export class Broadcaster<T> {
     private _listeners: ((e: T) => void)[] = [];

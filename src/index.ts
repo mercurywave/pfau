@@ -1,4 +1,5 @@
 import { Config } from "./config";
+import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 
 
@@ -8,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function setup(): Promise<void> {
     await Config.LoadSettings();
+    await DB.Init();
     await Route.Init();
 }
 window.addEventListener('popstate', () => Route.OnNavigate());
