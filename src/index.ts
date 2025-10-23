@@ -23,8 +23,11 @@ Route.RegisterDefault("menu", (flow) => {
     mkMainMenu(flow);
 });
 
-Route.Register("game", (flow, path) => {
+Route.Register("book", (flow, path) => {
     mkNotebook(flow, path['id'] ?? "");
+}, (path) => {
+    if (!path['id'] || !DB.GetBookById(path['id']))
+        Route.ErrorFallback();
 });
 
 function mkRoot(flow: Flow) {
@@ -41,10 +44,26 @@ function mkMain(flow: Flow) {
     flow.routePage(viewContainer, Route.GetUniqPage());
 }
 
-function mkMainMenu(flow: Flow){
+function mkMainMenu(flow: Flow) {
     let container = flow.child("div", { className: "menu-main" });
+    for (const saved of DB.AllBooks()) {
+        let btOpenNotebook = flow.elem<HTMLAnchorElement>(container, "a", {
+            innerText: saved.name ?? "[Temporary Notebook]",
+            title: saved.id,
+        });
+        btOpenNotebook.addEventListener("click", () => Route.Launch("book", { id: saved.id }));
+    }
+    let btNewNotebook = flow.elem<HTMLButtonElement>(container, "button", {
+        type: "button",
+        innerText: "+New Notebook",
+        className: "btMenu",
+    });
+    btNewNotebook.addEventListener("click", () => {
+        let book = DB.CreateNotebook();
+        Route.Launch("book", { id: book.id });
+    });
 }
 
-function mkNotebook(flow: Flow, id: string){
+function mkNotebook(flow: Flow, id: string) {
     let container = flow.child("div", { className: "notebook-main" });
 }

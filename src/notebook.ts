@@ -4,12 +4,14 @@ import { util } from "./util";
 export class Notebook {
     public blocks: Block[] = [];
     public _meta: NotebookMeta;
+    private _permanent: boolean = false;
     public constructor(meta: NotebookMeta) {
         this._meta = meta;
         this.blocks = meta.blocks.map(obj => new Block(this, obj));
     }
 
     public FlagDirty(): void {
+        if(!this._permanent) return;
         DB.SaveNotebook(this);
     }
 
@@ -19,11 +21,17 @@ export class Notebook {
     public set name(val: string) {
         if (val != "") this._meta.name = val;
         else delete this._meta.name;
+        this._permanent = !!this._meta.name;
         this.FlagDirty();
     }
 
-    public insertBlock(idx?: number): Block {
+    public createBlock(idx?: number): Block {
         let block = new Block(this, { type: eBlock.Unknown, id: util.UUID() });
+        this.insertBlock(block, idx);
+        return block;
+    }
+
+    public insertBlock(block: Block, idx?: number): Block {
         if (idx !== undefined && idx >= 0 && idx < this.blocks.length) {
             this.blocks.splice(idx, 0, block);
         } else {
@@ -45,12 +53,47 @@ export class Block {
         this.notebook.FlagDirty();
     }
     public get type(): eBlock { return this._meta.type; }
+    public set type(val: eBlock) {
+        if (this.type == val) return;
+        this._meta.type = val;
+        // Should I clear data?
+        this.FlagDirty();
+    }
     public get id(): string { return this._meta.id; }
     public get data(): string { return this._meta.data ?? ""; }
+    public set data(val: string | undefined) {
+        if (this.data == val) return;
+        this._meta.data = val;
+        this.FlagDirty();
+    }
     public get autoExec(): boolean { return this._meta.autoExec ?? false; }
+    public set autoExec(val: boolean) {
+        if ((this.autoExec ?? false) == val) return;
+        if (val) this._meta.autoExec = val;
+        else delete this._meta.autoExec;
+        this.FlagDirty();
+    }
     public get expandSettings(): boolean { return this._meta.expandSettings ?? false; }
+    public set expandSettings(val: boolean) {
+        if ((this.expandSettings ?? false) == val) return;
+        if (val) this._meta.expandSettings = val;
+        else delete this._meta.expandSettings;
+        this.FlagDirty();
+    }
     public get expandOutput(): boolean { return this._meta.expandOutput ?? false; }
+    public set expandOutput(val: boolean) {
+        if ((this.expandOutput ?? false) == val) return;
+        if (val) this._meta.expandOutput = val;
+        else delete this._meta.expandOutput;
+        this.FlagDirty();
+    }
     public get retainData(): boolean { return this._meta.retainData ?? false; }
+    public set retainData(val: boolean) {
+        if ((this.retainData ?? false) == val) return;
+        if (val) this._meta.retainData = val;
+        else delete this._meta.retainData;
+        this.FlagDirty();
+    }
 }
 
 
