@@ -81,7 +81,6 @@ function bldNotebook(flow: Flow, id: string) {
     });
     input.addEventListener("change", () => {
         notebook.name = input.value;
-        Flow.Dirty();
     });
     
     let blockList = flow.child("div", { className: "block-list" });

@@ -17,6 +17,19 @@ function mkUnknown(flow: Flow, block: Block) {
 function mkRegion(flow: Flow, block: Block) {
     let [_, main] = mkBlockElems(flow, block, true);
     bldHiddenSettings(flow, block, main);
+
+    let input = flow.elem<HTMLInputElement>(main, "input", {
+        className: "edRegion",
+        type: "text",
+        placeholder: "Region",
+        autocomplete: "off",
+    });
+    flow.bind(() => {
+        input.value = block.data;
+    });
+    input.addEventListener("change", () => {
+        block.data = input.value;
+    });
 }
 
 
