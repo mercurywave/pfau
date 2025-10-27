@@ -1,4 +1,5 @@
 import { DB } from "./DB";
+import { Flow } from "./flow";
 import { util } from "./util";
 
 export class Notebook {
@@ -12,6 +13,7 @@ export class Notebook {
     }
 
     public FlagDirty(): void {
+        Flow.Dirty();
         if(!this._permanent) return;
         DB.SaveNotebook(this);
     }

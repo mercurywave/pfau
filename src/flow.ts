@@ -274,20 +274,22 @@ export class Flow {
         return arr;
     }
 
-    public switchCtl<T>(host: HTMLElement, match: T, getType: () => T, builder: (flow: Flow) => void){
+    public switchCtl<T>(host: HTMLElement, match: T, getType: () => T, builder: (flow: Flow) => void) {
         // this lets you have an element that can be one of many different things
         // when the match changes, it will rebuild the host with the new type
         // you want to call this multiple times for the same host, one for each possible type
         let state = { lastType: getType() };
         this.bind(() => {
             let type = getType();
-            if(type === state.lastType) return;
-            if(type !== match) return;
+            if (type === state.lastType) return;
+            if (type === match) {
+                host.innerHTML = '';
+                builder(this);
+            }
             state.lastType = type;
-            host.innerHTML = '';
-            builder(this);
         });
-        builder(this);
+        if (state.lastType === match)
+            builder(this);
     }
 
     public routePage(host: HTMLElement | null, fixedPath?: string) {
@@ -431,9 +433,9 @@ type OnNavigateHandler = (path: { [key: string]: string }) => void;
 export class Route {
     public static RegisterDefault(page: string, handler: RouteHandler, onNavigate?: OnNavigateHandler,
         onPreLoad?: (path: { [key: string]: string }) => Promise<void>) {
-            this.Register(page, handler, onNavigate, onPreLoad, true);
+        this.Register(page, handler, onNavigate, onPreLoad, true);
     }
-    
+
     public static Register(page: string, handler: RouteHandler, onNavigate?: OnNavigateHandler,
         onPreLoad?: (path: { [key: string]: string }) => Promise<void>, dflt?: boolean) {
         let route = new Route(page, handler, onNavigate, onPreLoad);
