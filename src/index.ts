@@ -1,6 +1,8 @@
 import { Config } from "./config";
 import { DB } from "./DB";
 import { Flow, Route } from "./flow";
+import { mkBlock } from "./index_block";
+import { Block, Notebook } from "./notebook";
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -24,7 +26,7 @@ Route.RegisterDefault("menu", (flow) => {
 });
 
 Route.Register("book", (flow, path) => {
-    mkNotebook(flow, path['id'] ?? "");
+    bldNotebook(flow, path['id'] ?? "");
 }, (path) => {
     if (!path['id'] || !DB.GetBookById(path['id']))
         Route.ErrorFallback();
@@ -64,6 +66,41 @@ function mkMainMenu(flow: Flow) {
     });
 }
 
-function mkNotebook(flow: Flow, id: string) {
-    let container = flow.child("div", { className: "notebook-main" });
+function bldNotebook(flow: Flow, id: string) {
+    let notebook = DB.GetBookById(id);
+    if(!notebook) throw 'could not find notebook';
+
+    let input = flow.child<HTMLInputElement>("input", {
+        className: "edFolder",
+        type: "text",
+        placeholder: "Unnamed Folder",
+        autocomplete: "off",
+    });
+    flow.bind(() => {
+        input.value = notebook.name;
+    });
+    input.addEventListener("change", () => {
+        notebook.name = input.value;
+        Flow.Dirty();
+    });
+    
+    let blockList = flow.child("div", { className: "block-list" });
+    let bind = flow.bindArray(() => notebook.blocks, mkBlock, blockList);
+    bind.setAnimRemoval(200, "fade-out");
+
+    bldNewBlock(flow, notebook);
+    console.log(notebook.blocks);
+}
+
+function bldNewBlock(flow: Flow, notebook: Notebook){
+    let container = flow.child("div", { className: "notebook-footer" });
+    let btAddBlock = flow.elem<HTMLButtonElement>(container, "button", {
+        type: "button",
+        innerText: "+Block",
+        className: "btNotebookFooter",
+    });
+    btAddBlock.addEventListener("click", () => {
+        notebook.createBlock();
+        console.log(notebook.blocks);
+    });
 }

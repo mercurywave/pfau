@@ -2,12 +2,13 @@ import { DB } from "./DB";
 import { util } from "./util";
 
 export class Notebook {
-    public blocks: Block[] = [];
+    public blocks: Block[] = []; // Don't modify directly - this needs to sync with meta
     public _meta: NotebookMeta;
     private _permanent: boolean = false;
     public constructor(meta: NotebookMeta) {
         this._meta = meta;
         this.blocks = meta.blocks.map(obj => new Block(this, obj));
+        this._permanent = !!this._meta.name;
     }
 
     public FlagDirty(): void {
@@ -26,7 +27,8 @@ export class Notebook {
     }
 
     public createBlock(idx?: number): Block {
-        let block = new Block(this, { type: eBlock.Unknown, id: util.UUID() });
+        let meta = { type: eBlock.Unknown, id: util.UUID() };
+        let block = new Block(this, meta);
         this.insertBlock(block, idx);
         return block;
     }
@@ -34,8 +36,10 @@ export class Notebook {
     public insertBlock(block: Block, idx?: number): Block {
         if (idx !== undefined && idx >= 0 && idx < this.blocks.length) {
             this.blocks.splice(idx, 0, block);
+            this._meta.blocks.splice(idx, 0, block._meta);
         } else {
             this.blocks.push(block);
+            this._meta.blocks.push(block._meta);
         }
         this.FlagDirty();
         return block;
@@ -93,6 +97,26 @@ export class Block {
         if (val) this._meta.retainData = val;
         else delete this._meta.retainData;
         this.FlagDirty();
+    }
+
+    public static allTypes(): eBlock[] {
+        return [eBlock.Unknown, eBlock.Data, eBlock.Hefe, eBlock.JS,
+            eBlock.Load, eBlock.Store, eBlock.Region, eBlock.Markdown, eBlock.AI];
+    }
+
+    public static getTypeName(type: eBlock): string{
+        switch (type) {
+            case eBlock.Unknown: return "Unknown";
+            case eBlock.Data: return "Data";
+            case eBlock.Hefe: return "Transform";
+            case eBlock.JS: return "JavaScript";
+            case eBlock.Load: return "Load";
+            case eBlock.Store: return "Store";
+            case eBlock.Region: return "Region";
+            case eBlock.Markdown: return "Markdown";
+            case eBlock.AI: return "AI";
+            default: return "Unknown";
+        }
     }
 }
 

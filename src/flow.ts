@@ -274,6 +274,22 @@ export class Flow {
         return arr;
     }
 
+    public switchCtl<T>(host: HTMLElement, match: T, getType: () => T, builder: (flow: Flow) => void){
+        // this lets you have an element that can be one of many different things
+        // when the match changes, it will rebuild the host with the new type
+        // you want to call this multiple times for the same host, one for each possible type
+        let state = { lastType: getType() };
+        this.bind(() => {
+            let type = getType();
+            if(type === state.lastType) return;
+            if(type !== match) return;
+            state.lastType = type;
+            host.innerHTML = '';
+            builder(this);
+        });
+        builder(this);
+    }
+
     public routePage(host: HTMLElement | null, fixedPath?: string) {
         let state: string | Nil = null;
         this.bind(() => {
