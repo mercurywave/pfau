@@ -7,6 +7,7 @@ export function mkBlock(flow: Flow, block: Block) {
 
     flow.switchCtl(root, eBlock.Unknown, () => block.type, f => mkUnknown(f, block));
     flow.switchCtl(root, eBlock.Region, () => block.type, f => mkRegion(f, block));
+    flow.switchCtl(root, eBlock.Data, () => block.type, f => mkData(f, block));
 }
 
 function mkUnknown(flow: Flow, block: Block) {
@@ -32,6 +33,30 @@ function mkRegion(flow: Flow, block: Block) {
     });
 }
 
+function mkData(flow: Flow, block: Block) {
+    let [_, main] = mkBlockElems(flow, block, true);
+    bldHiddenSettings(flow, block, main);
+
+    let text = flow.elem<HTMLTextAreaElement>(main, "textarea", {
+        className: "txtIn",
+        spellcheck: false
+    });
+    let update = () => {
+        let rows = block.data.split("\n").length;
+        if(rows < 4) text.rows = 4;
+        else if (rows > 20) text.rows = 20;
+        else text.rows = rows;
+    };
+    flow.bind(() => {
+        text.value = block.data;
+        update();
+    });
+    text.addEventListener("change", () => {
+        block.data = text.value;
+        update();
+    });
+}
+
 
 
 function mkBlockElems(flow: Flow, block: Block, showSettings: boolean): [HTMLElement, HTMLElement, HTMLElement] {
@@ -49,9 +74,10 @@ function mkBlockElems(flow: Flow, block: Block, showSettings: boolean): [HTMLEle
     return [left, main, right];
 }
 
-function bldHiddenSettings(flow: Flow, block: Block, main: HTMLElement) {
+function bldHiddenSettings(flow: Flow, block: Block, main: HTMLElement): HTMLElement {
     let container = flow.elem(main, "div");
     flow.placeholder(f => bldSettings(f, block, f._root!), container, () => block.expandSettings)
+    return container;
 }
 
 function bldSettings(flow: Flow, block: Block, container: HTMLElement) {
