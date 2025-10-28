@@ -10,6 +10,8 @@ export function mkBlock(flow: Flow, block: Block) {
     flow.switchCtl(root, eBlock.Region, () => block.type, f => mkRegion(f, block));
     flow.switchCtl(root, eBlock.Data, () => block.type, f => mkData(f, block));
     flow.switchCtl(root, eBlock.Markdown, () => block.type, f => mkMarkdown(f, block));
+    flow.switchCtl(root, eBlock.Store, () => block.type, f => mkSaveLoad(f, block));
+    flow.switchCtl(root, eBlock.Load, () => block.type, f => mkSaveLoad(f, block));
 }
 
 function mkUnknown(flow: Flow, block: Block) {
@@ -79,6 +81,28 @@ function mkMarkdown(flow: Flow, block: Block) {
     });
 }
 
+function mkSaveLoad(flow: Flow, block: Block) {
+    let [_, main] = mkBlockElems(flow, block, true);
+    bldHiddenSettings(flow, block, main);
+
+    let subSpan = flow.elem(main, "span", { });
+    let lbl = (block.type === eBlock.Store) ? "Save" : "Load";
+    flow.elem(subSpan, "label", { innerText: `${lbl}: ` });
+
+    let input = flow.elem<HTMLInputElement>(main, "input", {
+        className: "edVariable",
+        type: "text",
+        placeholder: "Variable",
+        autocomplete: "off",
+    });
+    flow.bind(() => {
+        input.value = block.data;
+    });
+    input.addEventListener("change", () => {
+        block.data = input.value;
+    });
+}
+
 
 
 function mkBlockElems(flow: Flow, block: Block, showSettings: boolean): [HTMLElement, HTMLElement, HTMLElement] {
@@ -104,7 +128,7 @@ function bldHiddenSettings(flow: Flow, block: Block, main: HTMLElement): HTMLEle
 
 function bldSettings(flow: Flow, block: Block, container: HTMLElement) {
     let subSpan = flow.elem(container, "span", { className: "block-settings" });
-    flow.elem(subSpan, "label", { innerText: "Block Type:" })
+    flow.elem(subSpan, "label", { innerText: "Block Type: " });
     let typePicker = flow.elem<HTMLSelectElement>(subSpan, "select");
     for (const type of Block.allTypes()) {
         let opt = flow.elem<HTMLOptionElement>(typePicker, "option", {
