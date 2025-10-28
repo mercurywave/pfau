@@ -72,3 +72,14 @@ body {
     border: none;
     cursor: pointer;
 }
+
+.txtDescrip{
+    border: none;
+    color: #fff;
+    background-color: transparent;
+}
+.txtDescrip:focus{
+    background-color: #fff;
+    border: 1px solid #14202B;
+    color: #14202B;
+}

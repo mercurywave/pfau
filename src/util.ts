@@ -15,6 +15,10 @@ export namespace util {
         return text + delim + append;
     }
 
+    export function clamp(val: number, min: number, max: number){
+        return Math.max(min, Math.min(max, val));
+    }
+
     export function replaceAll(text: string, search: string, replace: string): string {
         return text.replace(new RegExp(search, 'g'), replace);
     }

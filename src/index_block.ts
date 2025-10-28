@@ -1,5 +1,6 @@
 import { Flow } from "./flow";
 import { Block, eBlock } from "./notebook";
+import { util } from "./util";
 
 
 export function mkBlock(flow: Flow, block: Block) {
@@ -8,6 +9,7 @@ export function mkBlock(flow: Flow, block: Block) {
     flow.switchCtl(root, eBlock.Unknown, () => block.type, f => mkUnknown(f, block));
     flow.switchCtl(root, eBlock.Region, () => block.type, f => mkRegion(f, block));
     flow.switchCtl(root, eBlock.Data, () => block.type, f => mkData(f, block));
+    flow.switchCtl(root, eBlock.Markdown, () => block.type, f => mkMarkdown(f, block));
 }
 
 function mkUnknown(flow: Flow, block: Block) {
@@ -43,9 +45,29 @@ function mkData(flow: Flow, block: Block) {
     });
     let update = () => {
         let rows = block.data.split("\n").length;
-        if(rows < 4) text.rows = 4;
-        else if (rows > 20) text.rows = 20;
-        else text.rows = rows;
+        text.rows = util.clamp(rows, 4, 20);
+    };
+    flow.bind(() => {
+        text.value = block.data;
+        update();
+    });
+    text.addEventListener("change", () => {
+        block.data = text.value;
+        update();
+    });
+}
+
+function mkMarkdown(flow: Flow, block: Block) {
+    // not actually markdown, just text
+    let [_, main] = mkBlockElems(flow, block, true);
+    bldHiddenSettings(flow, block, main);
+
+    let text = flow.elem<HTMLTextAreaElement>(main, "textarea", {
+        className: "txtDescrip"
+    });
+    let update = () => {
+        let rows = block.data.split("\n").length;
+        text.rows = util.clamp(rows, 2, 20);
     };
     flow.bind(() => {
         text.value = block.data;
