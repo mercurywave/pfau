@@ -83,3 +83,10 @@ body {
     border: 1px solid #14202B;
     color: #14202B;
 }
+
+.lblJs{
+    font-family: 'Courier New', Courier, monospace;
+}
+.txtJs{
+    margin-left: 36px;
+}

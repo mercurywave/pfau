@@ -12,6 +12,7 @@ export function mkBlock(flow: Flow, block: Block) {
     flow.switchCtl(root, eBlock.Markdown, () => block.type, f => mkMarkdown(f, block));
     flow.switchCtl(root, eBlock.Store, () => block.type, f => mkSaveLoad(f, block));
     flow.switchCtl(root, eBlock.Load, () => block.type, f => mkSaveLoad(f, block));
+    flow.switchCtl(root, eBlock.JS, () => block.type, f => mkJs(f, block));
 }
 
 function mkUnknown(flow: Flow, block: Block) {
@@ -53,9 +54,9 @@ function mkData(flow: Flow, block: Block) {
         text.value = block.data;
         update();
     });
+    text.addEventListener("keyup", () => update());
     text.addEventListener("change", () => {
         block.data = text.value;
-        update();
     });
 }
 
@@ -75,9 +76,9 @@ function mkMarkdown(flow: Flow, block: Block) {
         text.value = block.data;
         update();
     });
+    text.addEventListener("keyup", () => update());
     text.addEventListener("change", () => {
         block.data = text.value;
-        update();
     });
 }
 
@@ -85,7 +86,7 @@ function mkSaveLoad(flow: Flow, block: Block) {
     let [_, main] = mkBlockElems(flow, block, true);
     bldHiddenSettings(flow, block, main);
 
-    let subSpan = flow.elem(main, "span", { });
+    let subSpan = flow.elem(main, "span", {});
     let lbl = (block.type === eBlock.Store) ? "Save" : "Load";
     flow.elem(subSpan, "label", { innerText: `${lbl}: ` });
 
@@ -103,8 +104,47 @@ function mkSaveLoad(flow: Flow, block: Block) {
     });
 }
 
+function mkJs(flow: Flow, block: Block) {
+    let [left, main] = mkBlockElems(flow, block, true);
+    bldPlayButton(flow, block, left);
+    bldHiddenSettings(flow, block, main);
+
+    flow.elem(main, "div", { innerText: `function process(stream) {`, className: 'lblJs' });
+    let text = flow.elem<HTMLTextAreaElement>(main, "textarea", {
+        className: "txtJs"
+    });
+    flow.elem(main, "div", {
+        innerHTML: `&nbsp;&nbsp;&nbsp;&nbsp;return stream;<br>}`,
+        className: 'lblJs'
+    });
+    let output = flow.elem(main, "div", { className: "txtOutput"});
+
+    let update = () => {
+        let rows = text.value.split("\n").length;
+        text.rows = util.clamp(rows, 2, 20);
+    };
+    flow.bind(() => {
+        text.value = block.data;
+        update();
+    });
+    text.addEventListener("keyup", () => update());
+    text.addEventListener("change", () => {
+        block.data = text.value;
+    });
+    
+    flow.bind(() => output.innerText = block.output);
+}
 
 
+
+function bldPlayButton(flow: Flow, block: Block, container: HTMLElement) {
+    let btPlay = flow.elem<HTMLButtonElement>(container, "button", {
+        type: "button",
+        innerText: "▶️",
+        className: "btIcon",
+    });
+    btPlay.addEventListener("click", () => block.run());
+}
 function mkBlockElems(flow: Flow, block: Block, showSettings: boolean): [HTMLElement, HTMLElement, HTMLElement] {
     let left = flow.child("div", { className: "block-left" });
     let main = flow.child("div", { className: "block-main" });

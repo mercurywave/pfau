@@ -14,7 +14,7 @@ export class Notebook {
 
     public FlagDirty(): void {
         Flow.Dirty();
-        if(!this._permanent) return;
+        if (!this._permanent) return;
         DB.SaveNotebook(this);
     }
 
@@ -51,6 +51,8 @@ export class Notebook {
 export class Block {
     public notebook: Notebook;
     public _meta: BlockMeta;
+    public output: string = "";
+    private _dirtyCalc: boolean = true;
     public constructor(nb: Notebook, meta: BlockMeta) {
         this.notebook = nb;
         this._meta = meta;
@@ -70,6 +72,7 @@ export class Block {
     public set data(val: string | undefined) {
         if (this.data == val) return;
         this._meta.data = val;
+        if(this.hasCode) this._dirtyCalc = true;
         this.FlagDirty();
     }
     public get autoExec(): boolean { return this._meta.autoExec ?? false; }
@@ -101,12 +104,26 @@ export class Block {
         this.FlagDirty();
     }
 
-    public static allTypes(): eBlock[] {
-        return [eBlock.Unknown, eBlock.Data, eBlock.Hefe, eBlock.JS,
-            eBlock.Load, eBlock.Store, eBlock.Region, eBlock.Markdown, eBlock.AI];
+    public get hasCode(): boolean {
+        return this.type === eBlock.AI ||
+            this.type === eBlock.JS ||
+            this.type === eBlock.Hefe;
     }
 
-    public static getTypeName(type: eBlock): string{
+    public run() {
+        this.output = this.data; // TODO:
+        this._dirtyCalc = false;
+        Flow.Dirty();
+    }
+
+    public static allTypes(): eBlock[] {
+        return [
+            eBlock.Unknown, eBlock.Data, eBlock.Hefe, eBlock.JS,
+            eBlock.Load, eBlock.Store, eBlock.Region, eBlock.Markdown, eBlock.AI
+        ];
+    }
+
+    public static getTypeName(type: eBlock): string {
         switch (type) {
             case eBlock.Unknown: return "Unknown";
             case eBlock.Data: return "Data";
