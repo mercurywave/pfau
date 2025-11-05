@@ -47,6 +47,10 @@ function mkLlmLine(flow: Flow, server: ILlmServer) {
     let inAlias = boundTextInput(flow, () => server.alias ?? "", v => server.alias = v, lblAlias);
     inAlias.placeholder = server.id;
 
+    // TODO: switch to password field
+    let lblKey = flow.child("label", { innerText: " Key: " });
+    boundTextInput(flow, () => server.apiKey ?? "", v => server.apiKey = v, lblKey);
+
     let btRemove = flow.child<HTMLButtonElement>("button", {
         type: "button",
         innerText: "X",

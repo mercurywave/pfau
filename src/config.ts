@@ -14,6 +14,7 @@ export interface ILlmServer {
     type: string;
     url?: string;
     alias?: string;
+    apiKey?: string;
 }
 
 export interface IService {
