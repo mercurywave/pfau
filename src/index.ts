@@ -2,6 +2,7 @@ import { Config } from "./config";
 import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { mkBlock } from "./index_block";
+import { mkSettings } from "./index_settings";
 import { Block, Notebook } from "./notebook";
 
 
@@ -30,6 +31,10 @@ Route.Register("book", (flow, path) => {
 }, (path) => {
     if (!path['id'] || !DB.GetBookById(path['id']))
         Route.ErrorFallback();
+});
+
+Route.Register("settings", (flow, pars) => {
+    mkSettings(flow);
 });
 
 function mkRoot(flow: Flow) {
@@ -64,6 +69,13 @@ function mkMainMenu(flow: Flow) {
         let book = DB.CreateNotebook();
         Route.Launch("book", { id: book.id });
     });
+    
+    let btGear = flow.child<HTMLButtonElement>("button", {
+        type: "button",
+        innerText: "⚙️",
+        className: "btIcon",
+    });
+    btGear.addEventListener("click", () => Route.Launch("settings"));
 }
 
 function bldNotebook(flow: Flow, id: string) {
