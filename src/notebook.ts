@@ -48,7 +48,9 @@ export class Notebook {
     }
 
     public deleteBlock(block:Block) {
-        this.blocks.splice(this.blocks.indexOf(block), 1);
+        let idx = this.blocks.indexOf(block);
+        this.blocks.splice(idx, 1);
+        this._meta.blocks.splice(idx, 1);
         this.FlagDirty();
     }
 }
