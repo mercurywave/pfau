@@ -44,6 +44,9 @@ export namespace Config {
     export function getllmServers(): ILlmServer[] { return _config.llmServers; }
     export function setllmServers(servers: ILlmServer[]) { _config.llmServers = servers; }
 
+    export function getLlmModels(): string[] { return _config.llmModels; }
+    export function setLlmModels(models: string[]) { _config.llmModels = models; }
+
 
     export let llmPipelines: IService[] = [
         {

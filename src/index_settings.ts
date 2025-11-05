@@ -15,6 +15,7 @@ export function mkSettings(flow: Flow) {
 function mkMain(flow: Flow) {
     addSection(flow, "LLM Servers", mkLlmServers);
     let doShowAi = () => Config.getllmServers().length < 1;
+    addSection(flow, "Models", f => mkModels(f), doShowAi);
 }
 
 function mkLlmServers(flow: Flow) {
@@ -78,6 +79,12 @@ function getServerName(server: ILlmServer): string {
     return server.alias || server.url || server.id || "???";
 }
 
+function mkModels(flow:Flow){
+    boundTextArea(flow, 
+        () => Config.getLlmModels().join("\n"),
+        s => Config.setLlmModels(s.split("\n").filter(m => m != ""))
+    );
+}
 
 
 
