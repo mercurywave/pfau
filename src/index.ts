@@ -88,7 +88,6 @@ function bldNotebook(flow: Flow, id: string) {
     bind.setAnimRemoval(200, "fade-out");
 
     bldNewBlock(flow, notebook);
-    console.log(notebook.blocks);
 }
 
 function bldNewBlock(flow: Flow, notebook: Notebook){
@@ -100,6 +99,5 @@ function bldNewBlock(flow: Flow, notebook: Notebook){
     });
     btAddBlock.addEventListener("click", () => {
         notebook.createBlock();
-        console.log(notebook.blocks);
     });
 }

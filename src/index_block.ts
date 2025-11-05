@@ -118,7 +118,7 @@ function mkJs(flow: Flow, block: Block) {
         innerHTML: `&nbsp;&nbsp;&nbsp;&nbsp;return stream;<br>}`,
         className: 'lblJs'
     });
-    let output = flow.elem(main, "div", { className: "txtOutput"});
+    let output = flow.elem(main, "div", { className: "txtOutput" });
 
     let update = () => {
         let rows = text.value.split("\n").length;
@@ -132,7 +132,7 @@ function mkJs(flow: Flow, block: Block) {
     text.addEventListener("change", () => {
         block.data = text.value;
     });
-    
+
     flow.bind(() => output.innerText = block.output);
 }
 
@@ -144,7 +144,7 @@ function mkHefe(flow: Flow, block: Block) {
     let text = flow.elem<HTMLTextAreaElement>(main, "textarea", {
         className: "txtHefe"
     });
-    let output = flow.elem(main, "div", { className: "txtOutput"});
+    let output = flow.elem(main, "div", { className: "txtOutput" });
 
     let update = () => {
         let rows = text.value.split("\n").length;
@@ -158,7 +158,7 @@ function mkHefe(flow: Flow, block: Block) {
     text.addEventListener("change", () => {
         block.data = text.value;
     });
-    
+
     flow.bind(() => output.innerText = block.output);
 }
 
@@ -209,4 +209,11 @@ function bldSettings(flow: Flow, block: Block, container: HTMLElement) {
         let opt = Number.parseInt(typePicker.value);
         block.type = opt;
     });
+
+    let btDelete = flow.elem<HTMLButtonElement>(subSpan, "button", {
+        type: "button",
+        innerText: "❌",
+        className: "btIcon",
+    });
+    btDelete.addEventListener("click", () => block.notebook.deleteBlock(block));
 }
