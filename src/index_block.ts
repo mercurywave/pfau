@@ -13,6 +13,7 @@ export function mkBlock(flow: Flow, block: Block) {
     flow.switchCtl(root, eBlock.Store, () => block.type, f => mkSaveLoad(f, block));
     flow.switchCtl(root, eBlock.Load, () => block.type, f => mkSaveLoad(f, block));
     flow.switchCtl(root, eBlock.JS, () => block.type, f => mkJs(f, block));
+    flow.switchCtl(root, eBlock.Hefe, () => block.type, f => mkHefe(f, block));
 }
 
 function mkUnknown(flow: Flow, block: Block) {
@@ -116,6 +117,32 @@ function mkJs(flow: Flow, block: Block) {
     flow.elem(main, "div", {
         innerHTML: `&nbsp;&nbsp;&nbsp;&nbsp;return stream;<br>}`,
         className: 'lblJs'
+    });
+    let output = flow.elem(main, "div", { className: "txtOutput"});
+
+    let update = () => {
+        let rows = text.value.split("\n").length;
+        text.rows = util.clamp(rows, 2, 20);
+    };
+    flow.bind(() => {
+        text.value = block.data;
+        update();
+    });
+    text.addEventListener("keyup", () => update());
+    text.addEventListener("change", () => {
+        block.data = text.value;
+    });
+    
+    flow.bind(() => output.innerText = block.output);
+}
+
+function mkHefe(flow: Flow, block: Block) {
+    let [left, main] = mkBlockElems(flow, block, true);
+    bldPlayButton(flow, block, left);
+    bldHiddenSettings(flow, block, main);
+
+    let text = flow.elem<HTMLTextAreaElement>(main, "textarea", {
+        className: "txtHefe"
     });
     let output = flow.elem(main, "div", { className: "txtOutput"});
 
