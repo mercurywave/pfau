@@ -47,18 +47,28 @@ export class Notebook {
         return block;
     }
 
-    public deleteBlock(block:Block) {
+    public deleteBlock(block: Block) {
         let idx = this.blocks.indexOf(block);
         this.blocks.splice(idx, 1);
         this._meta.blocks.splice(idx, 1);
         this.FlagDirty();
+    }
+
+    public getInputStreamAt(block: Block): string {
+        let idx = this.blocks.indexOf(block) - 1;
+        for (; idx >= 0; idx--) {
+            let bk = this.blocks[idx]!;
+            let out = bk.output;
+            if (!!out) return out;
+        }
+        return "";
     }
 }
 
 export class Block {
     public notebook: Notebook;
     public _meta: BlockMeta;
-    public output: string = "";
+    public _output: string = "";
     private _dirtyCalc: boolean = true;
     public constructor(nb: Notebook, meta: BlockMeta) {
         this.notebook = nb;
@@ -79,7 +89,7 @@ export class Block {
     public set data(val: string | undefined) {
         if (this.data == val) return;
         this._meta.data = val;
-        if(this.hasCode) this._dirtyCalc = true;
+        if (this.hasCode) this._dirtyCalc = true;
         this.FlagDirty();
     }
     public get autoExec(): boolean { return this._meta.autoExec ?? false; }
@@ -117,8 +127,27 @@ export class Block {
             this.type === eBlock.Hefe;
     }
 
+    public get output(): string | null {
+        switch (this.type) {
+            case eBlock.AI:
+            case eBlock.JS:
+            case eBlock.Hefe:
+                return this._output;
+            case eBlock.Data:
+                return this.data;
+            default: return null;
+        }
+    }
+
     public run() {
-        this.output = this.data; // TODO:
+        if (this.hasCode) {
+            let stream = this.notebook.getInputStreamAt(this);
+            if (this.type == eBlock.JS) {
+                let code = this.data;
+                let result = jsEval(code, stream);
+                this._output = result;
+            }
+        }
         this._dirtyCalc = false;
         Flow.Dirty();
     }
@@ -144,6 +173,15 @@ export class Block {
             default: return "Unknown";
         }
     }
+}
+
+function jsEval(code: string, stream: string): string {
+    try {
+        console.log(code);
+        eval(code);
+        console.log(stream);
+    } catch (err) { return `ERROR: ${err}`; }
+    return stream;
 }
 
 
