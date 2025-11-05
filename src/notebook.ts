@@ -1,5 +1,7 @@
 import { DB } from "./DB";
 import { Flow } from "./flow";
+import { Interpreter } from "./hefe/interpreter";
+import { Parser } from "./hefe/parser";
 import { util } from "./util";
 
 export class Notebook {
@@ -59,7 +61,7 @@ export class Notebook {
         for (; idx >= 0; idx--) {
             let bk = this.blocks[idx]!;
             let out = bk.output;
-            if (!!out) return out;
+            if (out != null) return out;
         }
         return "";
     }
@@ -139,13 +141,30 @@ export class Block {
         }
     }
 
-    public run() {
+    public async run() {
         if (this.hasCode) {
+            let code = this.data;
             let stream = this.notebook.getInputStreamAt(this);
             if (this.type == eBlock.JS) {
-                let code = this.data;
                 let result = jsEval(code, stream);
                 this._output = result;
+            } else if (this.type == eBlock.Hefe){
+                let input = {
+                    text: stream,
+                    fileName: "Input",
+                    variables: {
+                        Input: stream,
+                    },
+                    folder: null,
+                }
+                var parse = Parser.Parse(code);
+                let result = await Interpreter.Process(input, parse, 99999999);
+                if(result != null){
+                    if(!!result.error)
+                        this._output = result.error.message;
+                    else
+                        this._output = result.output!.toDisplayText();
+                }
             }
         }
         this._dirtyCalc = false;

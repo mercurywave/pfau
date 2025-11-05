@@ -1,6 +1,6 @@
 import { ICanHaveScope, IStatement, ParseContext, Parser, SExit, SFunctionDef, SNoop } from "./parser";
 import { Stream } from "./stream";
-import { } from "./stdlib";
+import "./stdlib";
 
 export interface InputContext{
     text: string;

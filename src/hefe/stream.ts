@@ -195,11 +195,11 @@ export class Stream {
         if(this.isMap) return this.map!;
         throw  new Error(`cannot cast '${this.toDisplayText()}' to map`);
     }
-    public get isNum(): boolean { return this.num !== null; }
-    public get isText(): boolean { return this.text !== null; }
-    public get isBool(): boolean { return this.bool !== null; }
-    public get isArray(): boolean { return this.array !== null; }
-    public get isMap(): boolean { return this.map !== null; }
+    public get isNum(): boolean { return this.num !== undefined; }
+    public get isText(): boolean { return this.text !== undefined; }
+    public get isBool(): boolean { return this.bool !== undefined; }
+    public get isArray(): boolean { return this.array !== undefined; }
+    public get isMap(): boolean { return this.map !== undefined; }
 
     public get isTable(): boolean { 
         return this.isArray && this.array!.every(c => c.isArray);
