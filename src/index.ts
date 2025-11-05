@@ -42,7 +42,7 @@ function mkRoot(flow: Flow) {
 
     let outer = flow.elem(main, "div", { id: "mainOuter" });
     let bind = flow.bindObject(() => 'k' + Route.GetUniqPage(), mkMain, outer);
-    bind.setAnimRemoval(150, "fade-out-view");
+    //bind.setAnimRemoval(150, "fade-out-view");
     flow.bindAsMainRouteScroll(outer);
 }
 
@@ -69,7 +69,7 @@ function mkMainMenu(flow: Flow) {
         let book = DB.CreateNotebook();
         Route.Launch("book", { id: book.id });
     });
-    
+
     let btGear = flow.child<HTMLButtonElement>("button", {
         type: "button",
         innerText: "⚙️",
