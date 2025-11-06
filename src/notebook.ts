@@ -1,3 +1,5 @@
+import { AILink } from "./ai";
+import { Config } from "./config";
 import { DB } from "./DB";
 import { Flow } from "./flow";
 import { Interpreter } from "./hefe/interpreter";
@@ -122,7 +124,7 @@ export class Block {
         else delete this._meta.retainData;
         this.FlagDirty();
     }
-    
+
     public get aiServerKey(): string { return this._meta.aiServerKey ?? ""; }
     public set aiServerKey(val: string | undefined) {
         if (this.aiServerKey == val) return;
@@ -130,7 +132,7 @@ export class Block {
         if (this.hasCode) this._dirtyCalc = true;
         this.FlagDirty();
     }
-    
+
     public get aiModel(): string { return this._meta.aiModel ?? ""; }
     public set aiModel(val: string | undefined) {
         if (this.aiModel == val) return;
@@ -164,7 +166,7 @@ export class Block {
             if (this.type == eBlock.JS) {
                 let result = jsEval(code, stream);
                 this._output = result;
-            } else if (this.type == eBlock.Hefe){
+            } else if (this.type == eBlock.Hefe) {
                 let input = {
                     text: stream,
                     fileName: "Input",
@@ -175,11 +177,20 @@ export class Block {
                 }
                 var parse = Parser.Parse(code);
                 let result = await Interpreter.Process(input, parse, 99999999);
-                if(result != null){
-                    if(!!result.error)
+                if (result != null) {
+                    if (!!result.error)
                         this._output = result.error.message;
                     else
                         this._output = result.output!.toDisplayText();
+                }
+            } else if (this.type == eBlock.AI) {
+                let input = code;
+                let server = Config.getllmServers().find(s => s.id == this.aiServerKey);
+                if(!server) {
+                    this._output = "AI server not found";
+                } else {
+                    let ai = new AILink(server);
+                    this._output = await ai.simpleChat(input, this.aiModel) ?? "<AI error>";
                 }
             }
         }
