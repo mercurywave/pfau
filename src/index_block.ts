@@ -135,7 +135,7 @@ function mkJs(flow: Flow, block: Block) {
         block.data = text.value;
     });
 
-    flow.bind(() => output.innerText = block.output!);
+    flow.bind(() => output.innerText = block.output?.toDisplayText() ?? "");
 }
 
 function mkHefe(flow: Flow, block: Block) {
@@ -161,7 +161,7 @@ function mkHefe(flow: Flow, block: Block) {
         block.data = text.value;
     });
 
-    flow.bind(() => output.innerText = block.output!);
+    flow.bind(() => output.innerText = block.output?.toDisplayText() ?? "");
 }
 
 
@@ -199,7 +199,7 @@ function mkAi(flow: Flow, block: Block) {
         block.data = text.value;
     });
 
-    flow.bind(() => output.innerText = block.output!);
+    flow.bind(() => output.innerText = block.output?.toDisplayText() ?? "");
 }
 
 

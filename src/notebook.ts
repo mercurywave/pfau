@@ -4,6 +4,7 @@ import { DB } from "./DB";
 import { Flow } from "./flow";
 import { Interpreter } from "./hefe/interpreter";
 import { Parser } from "./hefe/parser";
+import { Stream } from "./hefe/stream";
 import { util } from "./util";
 
 export class Notebook {
@@ -58,21 +59,21 @@ export class Notebook {
         this.FlagDirty();
     }
 
-    public getInputStreamAt(block: Block): string {
+    public getInputStreamAt(block: Block): Stream {
         let idx = this.blocks.indexOf(block) - 1;
         for (; idx >= 0; idx--) {
             let bk = this.blocks[idx]!;
             let out = bk.output;
             if (out != null) return out;
         }
-        return "";
+        return Stream.mkText("");
     }
 }
 
 export class Block {
     public notebook: Notebook;
     public _meta: BlockMeta;
-    public _output: string = "";
+    public _output: Stream  | null = null;
     private _dirtyCalc: boolean = true;
     public constructor(nb: Notebook, meta: BlockMeta) {
         this.notebook = nb;
@@ -147,14 +148,14 @@ export class Block {
             this.type === eBlock.Hefe;
     }
 
-    public get output(): string | null {
+    public get output(): Stream | null {
         switch (this.type) {
             case eBlock.AI:
             case eBlock.JS:
             case eBlock.Hefe:
                 return this._output;
             case eBlock.Data:
-                return this.data;
+                return Stream.mkText(this.data);
             default: return null;
         }
     }
@@ -164,14 +165,14 @@ export class Block {
             let code = this.data;
             let stream = this.notebook.getInputStreamAt(this);
             if (this.type == eBlock.JS) {
-                let result = jsEval(code, stream);
-                this._output = result;
+                let result = jsEval(code, stream.asString());
+                this._output = Stream.mkText(result);
             } else if (this.type == eBlock.Hefe) {
                 let input = {
-                    text: stream,
+                    text: stream.asString(),
                     fileName: "Input",
                     variables: {
-                        Input: stream,
+                        Input: stream.asString(),
                     },
                     folder: null,
                 }
@@ -179,18 +180,19 @@ export class Block {
                 let result = await Interpreter.Process(input, parse, 99999999);
                 if (result != null) {
                     if (!!result.error)
-                        this._output = result.error.message;
+                        this._output = Stream.mkText(result.error.message);
                     else
-                        this._output = result.output!.toDisplayText();
+                        this._output = result.output;
                 }
             } else if (this.type == eBlock.AI) {
-                let input = code.replace(/{{STREAM}}/g, stream);
+                let input = code.replace(/{{STREAM}}/g, stream.asString());
                 let server = Config.getllmServers().find(s => s.id == this.aiServerKey);
                 if(!server) {
-                    this._output = "AI server not found";
+                    this._output = Stream.mkText("AI server not found");
                 } else {
                     let ai = new AILink(server);
-                    this._output = await ai.simpleChat(input, this.aiModel) ?? "<AI error>";
+                    let result = await ai.simpleChat(input, this.aiModel) ?? "<AI error>";
+                    this._output = Stream.mkText(result);
                 }
             }
         }
