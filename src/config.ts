@@ -57,6 +57,13 @@ export namespace Config {
             `.trim(),
         },
         {
+            name: "LM Studio",
+            key: "LMStudio",
+            description: `
+                Must enable server, and CORS.
+            `.trim(),
+        },
+        {
             name: "Ollama",
             key: "Ollama",
             description: `
