@@ -63,6 +63,7 @@ export class Notebook {
         let idx = this.blocks.indexOf(block) - 1;
         for (; idx >= 0; idx--) {
             let bk = this.blocks[idx]!;
+            if(bk.type == eBlock.Region) break;
             let out = bk.output;
             if (out != null) return out;
         }
