@@ -1,3 +1,4 @@
+import { Config } from "./config";
 import { Flow } from "./flow";
 import { Block, eBlock } from "./notebook";
 import { util } from "./util";
@@ -14,6 +15,7 @@ export function mkBlock(flow: Flow, block: Block) {
     flow.switchCtl(root, eBlock.Load, () => block.type, f => mkSaveLoad(f, block));
     flow.switchCtl(root, eBlock.JS, () => block.type, f => mkJs(f, block));
     flow.switchCtl(root, eBlock.Hefe, () => block.type, f => mkHefe(f, block));
+    flow.switchCtl(root, eBlock.AI, () => block.type, f => mkAi(f, block));
 }
 
 function mkUnknown(flow: Flow, block: Block) {
@@ -164,6 +166,44 @@ function mkHefe(flow: Flow, block: Block) {
 
 
 
+function mkAi(flow: Flow, block: Block) {
+    let [left, main] = mkBlockElems(flow, block, true);
+    bldPlayButton(flow, block, left);
+    bldHiddenSettings(flow, block, main, f => {
+        f.child("br");
+        f.child("label", { innerText: "Server: " });
+        let servers: [string, string][] = Config.getllmServers().map(s => [s.id, s.alias ?? s.url ?? s.id]);
+        addSimpleDropDown(f, servers, () => block.aiServerKey, m => block.aiServerKey = m);
+
+        f.child("label", { innerText: "Model: " });
+        let models: [string, string][] = Config.getLlmModels().map(m => [m, m]);
+        addSimpleDropDown(f, models, () => block.aiModel, m => block.aiModel = m);
+    });
+
+
+    let text = flow.elem<HTMLTextAreaElement>(main, "textarea", {
+        className: "txtHefe"
+    });
+    let output = flow.elem(main, "div", { className: "txtOutput" });
+
+    let update = () => {
+        let rows = text.value.split("\n").length;
+        text.rows = util.clamp(rows, 2, 20);
+    };
+    flow.bind(() => {
+        text.value = block.data;
+        update();
+    });
+    text.addEventListener("keyup", () => update());
+    text.addEventListener("change", () => {
+        block.data = text.value;
+    });
+
+    flow.bind(() => output.innerText = block.output!);
+}
+
+
+
 function bldPlayButton(flow: Flow, block: Block, container: HTMLElement) {
     let btPlay = flow.elem<HTMLButtonElement>(container, "button", {
         type: "button",
@@ -187,14 +227,17 @@ function mkBlockElems(flow: Flow, block: Block, showSettings: boolean): [HTMLEle
     return [left, main, right];
 }
 
-function bldHiddenSettings(flow: Flow, block: Block, main: HTMLElement): HTMLElement {
+function bldHiddenSettings(flow: Flow, block: Block, main: HTMLElement, extraBuilder?: (flow: Flow) => void) {
     let container = flow.elem(main, "div");
-    flow.placeholder(f => bldSettings(f, block, f._root!), container, () => block.expandSettings)
-    return container;
+    flow.placeholder(f => {
+        bldSettings(f, block);
+        if (extraBuilder) extraBuilder(f);
+    }, container, () => block.expandSettings)
 }
 
-function bldSettings(flow: Flow, block: Block, container: HTMLElement) {
-    let subSpan = flow.elem(container, "span", { className: "block-settings" });
+function bldSettings(flow: Flow, block: Block, container?: HTMLElement) {
+    if(!container) container = flow._root!;
+    let subSpan = flow.elem(container ,"span", { className: "block-settings" });
     flow.elem(subSpan, "label", { innerText: "Block Type: " });
     let typePicker = flow.elem<HTMLSelectElement>(subSpan, "select");
     for (const type of Block.allTypes()) {
@@ -216,4 +259,17 @@ function bldSettings(flow: Flow, block: Block, container: HTMLElement) {
         className: "btIcon",
     });
     btDelete.addEventListener("click", () => block.notebook.deleteBlock(block));
+}
+
+function addSimpleDropDown(flow: Flow, opts: [string, string][], getter: () => string, setter: (val: string) => void, parent?: HTMLElement): HTMLSelectElement {
+    // assumes a static list, or one that isn't modifiable from the same page
+    let dropDown = flow.elem<HTMLSelectElement>(parent, "select");
+    for (const pair of opts) {
+        flow.elem<HTMLOptionElement>(dropDown, "option", { value: pair[0], innerText: pair[1] });
+    }
+    flow.bind(() => dropDown.value = getter());
+    dropDown.addEventListener("change", () => {
+        setter(dropDown.value);
+    });
+    return dropDown;
 }

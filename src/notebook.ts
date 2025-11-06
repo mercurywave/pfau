@@ -122,6 +122,22 @@ export class Block {
         else delete this._meta.retainData;
         this.FlagDirty();
     }
+    
+    public get aiServerKey(): string { return this._meta.aiServerKey ?? ""; }
+    public set aiServerKey(val: string | undefined) {
+        if (this.aiServerKey == val) return;
+        this._meta.aiServerKey = val;
+        if (this.hasCode) this._dirtyCalc = true;
+        this.FlagDirty();
+    }
+    
+    public get aiModel(): string { return this._meta.aiModel ?? ""; }
+    public set aiModel(val: string | undefined) {
+        if (this.aiModel == val) return;
+        this._meta.aiModel = val;
+        if (this.hasCode) this._dirtyCalc = true;
+        this.FlagDirty();
+    }
 
     public get hasCode(): boolean {
         return this.type === eBlock.AI ||
@@ -220,6 +236,8 @@ export interface BlockMeta {
     expandSettings?: boolean;
     expandOutput?: boolean;
     retainData?: boolean;
+    aiServerKey?: string;
+    aiModel?: string;
 }
 
 export enum eBlock {
