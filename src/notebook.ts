@@ -184,7 +184,7 @@ export class Block {
                         this._output = result.output!.toDisplayText();
                 }
             } else if (this.type == eBlock.AI) {
-                let input = code;
+                let input = code.replace(/{{STREAM}}/g, stream);
                 let server = Config.getllmServers().find(s => s.id == this.aiServerKey);
                 if(!server) {
                     this._output = "AI server not found";
