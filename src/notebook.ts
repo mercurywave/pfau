@@ -63,7 +63,7 @@ export class Notebook {
         let idx = this.blocks.indexOf(block) - 1;
         for (; idx >= 0; idx--) {
             let bk = this.blocks[idx]!;
-            if(bk.type == eBlock.Region) break;
+            if (bk.type == eBlock.Region) break;
             let out = bk.output;
             if (out != null) return out;
         }
@@ -74,7 +74,7 @@ export class Notebook {
 export class Block {
     public notebook: Notebook;
     public _meta: BlockMeta;
-    public _output: Stream  | null = null;
+    public _output: Stream | null = null;
     private _dirtyCalc: boolean = true;
     public constructor(nb: Notebook, meta: BlockMeta) {
         this.notebook = nb;
@@ -160,45 +160,65 @@ export class Block {
             default: return null;
         }
     }
-
     public async run() {
         if (this.hasCode) {
-            let code = this.data;
             let stream = this.notebook.getInputStreamAt(this);
-            if (this.type == eBlock.JS) {
-                let result = jsEval(code, stream.asString());
-                this._output = Stream.mkText(result);
-            } else if (this.type == eBlock.Hefe) {
-                let input = {
-                    text: stream.asString(),
-                    fileName: "Input",
-                    variables: {
-                        Input: stream.asString(),
-                    },
-                    folder: null,
-                }
-                var parse = Parser.Parse(code);
-                let result = await Interpreter.Process(input, parse, 99999999);
-                if (result != null) {
-                    if (!!result.error)
-                        this._output = Stream.mkText(result.error.message);
-                    else
-                        this._output = result.output;
-                }
-            } else if (this.type == eBlock.AI) {
-                let input = code.replace(/{{STREAM}}/g, stream.asString());
-                let server = Config.getllmServers().find(s => s.id == this.aiServerKey);
-                if(!server) {
-                    this._output = Stream.mkText("AI server not found");
-                } else {
-                    let ai = new AILink(server);
-                    let result = await ai.simpleChat(input, this.aiModel) ?? "<AI error>";
-                    this._output = Stream.mkText(result);
-                }
+            let output:Stream;
+            if (this.type == eBlock.Hefe) {
+                output = await this.runSingleCode(stream);
             }
+            else if(stream.isArray){
+                const array = stream.asArray();
+                const results = await Promise.all(array.map(async (item) => {
+                    return await this.runSingleCode(item);
+                }));
+                output = Stream.mkArr(results);
+            }
+            else {
+                output = await this.runSingleCode(stream);
+            }
+            this._output = output;
         }
         this._dirtyCalc = false;
         Flow.Dirty();
+    }
+
+    public async runSingleCode(stream: Stream): Promise<Stream> {
+        let code = this.data;
+        if (this.type == eBlock.JS) {
+            let result = jsEval(code, stream.asString());
+            return Stream.mkText(result);
+        } else if (this.type == eBlock.Hefe) {
+            let input = {
+                text: stream.asString(),
+                fileName: "Input",
+                variables: {
+                    Input: stream.asString(),
+                },
+                folder: null,
+            }
+            var parse = Parser.Parse(code);
+            let result = await Interpreter.Process(input, parse, 99999999);
+            if (result != null) {
+                if (!!result.error)
+                    return Stream.mkText(result.error.message);
+                else
+                    return result.output;
+            }
+            return Stream.mkText("Interrupted?");
+        } else if (this.type == eBlock.AI) {
+            let input = code.replace(/{{STREAM}}/g, stream.asString());
+            let server = Config.getllmServers().find(s => s.id == this.aiServerKey);
+            if (!server) {
+                return Stream.mkText("AI server not found");
+            } else {
+                console.log("Running Prompt:", input)
+                let ai = new AILink(server);
+                let result = await ai.simpleChat(input, this.aiModel) ?? "<AI error>";
+                return Stream.mkText(result);
+            }
+        }
+        throw 'run path not implemented';
     }
 
     public static allTypes(): eBlock[] {
